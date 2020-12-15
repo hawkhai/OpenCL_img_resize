@@ -35,7 +35,7 @@ int main()
         cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
         // Load program source
-        std::ifstream file2{ "C:/Users/haffn/Desktop/MSc-III/GPU-II/Projects/second project/rot_res_gam.cl" };
+        std::ifstream file2{ "C:/Users/haffn/Desktop/MSc-III/GPU-II/Projects/second project/final/rot_res_gam.cl" };
 
         // if program failed to open
         if (!file2.is_open())
