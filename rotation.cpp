@@ -191,7 +191,7 @@ int main()
 
 // Calling the kernels
 
-        queue.enqueueNDRangeKernel(rotation, cl::NullRange, cl::NDRange(width_size, height_size));
+        queue.enqueueNDRangeKernel(rotation, cl::NullRange, cl::NDRange(new_width_size, new_height_size));
         cl::finish();
         queue.enqueueReadImage(textures[1], CL_TRUE, origin, dims1, 0, 0, output1.data(), 0, nullptr);
 
