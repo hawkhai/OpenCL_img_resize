@@ -122,15 +122,16 @@ int main()
 
 // Calculating the new image sizes and centers:
 
-        int rot_new_height = (int)std::round(std::abs(height*cos(angle_rad)) + std::abs(width*sin(angle_rad)));
-        int rot_new_width = (int)std::round(std::abs(width*cos(angle_rad)) + std::abs(height*sin(angle_rad)));
+        int rot_new_height = (int)std::round(std::abs(res_new_height*cos(angle_rad)) + std::abs(res_new_width*sin(angle_rad)));
+        int rot_new_width = (int)std::round(std::abs(res_new_width*cos(angle_rad)) + std::abs(res_new_height*sin(angle_rad)));
 
         size_t width_size = width;
         size_t height_size = height;
-        size_t new_width_size = rot_new_width;
-        size_t new_height_size = rot_new_height;
         size_t res_width_size = res_new_width;
         size_t res_height_size = res_new_height;
+        size_t rot_width_size = rot_new_width;
+        size_t rot_height_size = rot_new_height;
+
 
 // ############################################################################
 // Crating the texture vector
@@ -153,63 +154,63 @@ int main()
 
 // Creating the textures with the appropriate data
 
-        std::vector<color> output1(rot_new_width*rot_new_height);
-        std::vector<color> output2(res_new_width*res_new_height);
+        std::vector<color> output1(res_new_width*res_new_height);
+        std::vector<color> output2(rot_new_width*rot_new_height);
 
         textures[0] = cl::Image2D(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Format1, width_size, height_size, 0, input.data(), nullptr);
-        textures[1] = cl::Image2D(context, CL_MEM_READ_WRITE, Format2, new_width_size, new_height_size, 0, nullptr, nullptr);
-        textures[2] = cl::Image2D(context, CL_MEM_WRITE_ONLY, Format3, res_width_size, res_height_size, 0, nullptr, nullptr);
+        textures[1] = cl::Image2D(context, CL_MEM_READ_WRITE, Format2, res_width_size, res_height_size, 0, nullptr, nullptr);
+        textures[2] = cl::Image2D(context, CL_MEM_WRITE_ONLY, Format3, rot_width_size, rot_height_size, 0, nullptr, nullptr);
 
         cl::Sampler sampler = cl::Sampler(context, CL_FALSE, CL_ADDRESS_CLAMP, CL_FILTER_NEAREST);
 
         std::array<cl::size_type, 3> origin = {0, 0, 0};
-        std::array<cl::size_type, 3> dims1 = {new_width_size, new_height_size, 1};
-        std::array<cl::size_type, 3> dims2 = {res_width_size, res_height_size, 1};
+        std::array<cl::size_type, 3> dims1 = {res_width_size, res_height_size, 1};
+        std::array<cl::size_type, 3> dims2 = {rot_width_size, rot_height_size, 1};
 
 // ############################################################################
-// Setting the arguments of the rotation kernel
-
-        rotation.setArg(0, textures[0]);
-        rotation.setArg(1, textures[1]);
-        rotation.setArg(2, sampler);
-        rotation.setArg(3, height);
-        rotation.setArg(4, width);
-        rotation.setArg(5, rot_new_height);
-        rotation.setArg(6, rot_new_width);
-        rotation.setArg(7, angle_rad);
-
 // Setting the argument of the resize_gamma kernel
 
-        resize_gamma.setArg(0, textures[1]);
-        resize_gamma.setArg(1, textures[2]);
+        resize_gamma.setArg(0, textures[0]);
+        resize_gamma.setArg(1, textures[1]);
         resize_gamma.setArg(2, sampler);
-        resize_gamma.setArg(3, rot_new_width);
-        resize_gamma.setArg(4, rot_new_height);
+        resize_gamma.setArg(3, width);
+        resize_gamma.setArg(4, height);
         resize_gamma.setArg(5, res_new_width);
         resize_gamma.setArg(6, res_new_height);
         resize_gamma.setArg(7, gamma_val);
 
+// Setting the arguments of the rotation kernel
+
+        rotation.setArg(0, textures[1]);
+        rotation.setArg(1, textures[2]);
+        rotation.setArg(2, sampler);
+        rotation.setArg(3, res_new_height);
+        rotation.setArg(4, res_new_width);
+        rotation.setArg(5, rot_new_height);
+        rotation.setArg(6, rot_new_width);
+        rotation.setArg(7, angle_rad);
+
 // Calling the kernels
 
-        queue.enqueueNDRangeKernel(rotation, cl::NullRange, cl::NDRange(new_width_size, new_height_size));
+        queue.enqueueNDRangeKernel(resize_gamma, cl::NullRange, cl::NDRange(res_width_size, res_height_size));
         cl::finish();
         queue.enqueueReadImage(textures[1], CL_TRUE, origin, dims1, 0, 0, output1.data(), 0, nullptr);
 
-        queue.enqueueNDRangeKernel(resize_gamma, cl::NullRange, cl::NDRange(res_width_size, res_height_size));
+        queue.enqueueNDRangeKernel(rotation, cl::NullRange, cl::NDRange(rot_width_size, rot_height_size));
         cl::finish();
         queue.enqueueReadImage(textures[2], CL_TRUE, origin, dims2, 0, 0, output2.data(), 0, nullptr);
 
 // ############################################################################
 // Creating the output data and saving the image
 
-        std::vector<rawcolor> tmp(res_new_width*res_new_height*4);
+        std::vector<rawcolor> tmp(rot_new_width*rot_new_height*4);
         std::transform(output2.cbegin(), output2.cend(), tmp.begin(), 
         [](color c) {return rawcolor{ (unsigned char)(c.r*255.0f),
                                       (unsigned char)(c.g*255.0f),
                                       (unsigned char)(c.b*255.0f),
                                       (unsigned char)(1.0f*255.0f) }; });
 
-        int res = stbi_write_png("result.png", res_new_width, res_new_height, 4, tmp.data(), res_new_width*4);
+        int res = stbi_write_png("result.png", rot_new_width, rot_new_height, 4, tmp.data(), rot_new_width*4);
         if (res == 0)
         {
             std::cout << "Error writing utput to file\n";
