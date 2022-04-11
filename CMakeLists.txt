@@ -10,10 +10,15 @@ set(CMAKE_MODULE_PATH
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules
 )
 
+set(OpenCL_INCLUDE_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/../OpenCL-SDK-v2022.04.01-Win-x86/OpenCL-SDK-2022.4.1-win32/include)
+set(OpenCL_LIBRARY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../OpenCL-SDK-v2022.04.01-Win-x86/OpenCL-SDK-2022.4.1-win32/lib/OpenCL.lib)
+
 find_package(OpenCL REQUIRED)
 find_package(Threads REQUIRED)
 
-set(Sources rotation.cpp)
+set(Sources rotation.cpp rot_res_gam.cl)
 
 add_executable(${PROJECT_NAME}
   ${Sources}

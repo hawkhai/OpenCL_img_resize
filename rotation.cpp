@@ -21,9 +21,9 @@
 #include <math.h>
 #include <windows.h>
 
-struct rawcolor{ unsigned char r, g, b, a; };
-struct rawcolor3{ unsigned char r, g, b; };
-struct color   { float         r, g, b, a; };
+struct rawcolor { unsigned char r, g, b, a; };
+struct rawcolor3 { unsigned char r, g, b; };
+struct color { float         r, g, b, a; };
 
 int main()
 {
@@ -35,7 +35,7 @@ int main()
         cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
         // Load program source
-        std::ifstream file2{ "C:/Users/haffn/Desktop/MSc-III/GPU-II/Projects/second project/final/rot_res_gam.cl" };
+        std::ifstream file2{ "../rot_res_gam.cl" };
 
         // if program failed to open
         if (!file2.is_open())
@@ -48,11 +48,11 @@ int main()
         program.build({ device });
 
         // Creating the kernel
-        cl:: Kernel rotation(program, "rotation");
-        cl:: Kernel resize_gamma(program, "resize_gamma");
+        cl::Kernel rotation(program, "rotation");
+        cl::Kernel resize_gamma(program, "resize_gamma");
 
-// ############################################################################
-// Declaring some variables
+        // ############################################################################
+        // Declaring some variables
 
         float angle;
         float gamma_val;
@@ -63,34 +63,38 @@ int main()
         int res_new_width;
         int res_new_height;
 
-// Getting the inputs from the user
-        
-        std::cout << std::endl <<"Please enter the angle of rotation in degrees! \n";
-        std::cin >> angle;
+        // Getting the inputs from the user
+
+        std::cout << std::endl << "Please enter the angle of rotation in degrees! \n";
+        //std::cin >> angle;
+        angle = 0;
 
         std::cout << std::endl << "Please enter the new width! \n";
-        std::cin >> res_new_width;
+        //std::cin >> res_new_width;
+        res_new_width = 600;
         std::cout << std::endl << "Please enter the new height! \n";
-        std::cin >> res_new_height;
+        //std::cin >> res_new_height;
+        res_new_height = 400;
 
-        std::cout << std::endl <<"Please enter the value of the gamma correction! \n";
-        std::cin >> gamma_val;
+        std::cout << std::endl << "Please enter the value of the gamma correction! \n";
+        //std::cin >> gamma_val;
+        gamma_val = 1.0;
 
-// Printing the new values on the consol
+        // Printing the new values on the consol
 
-        std::cout << std::endl << "The degree of rotation is: "  << angle;
-        std::cout << std::endl <<"The new sizes are: " << res_new_width << "x" << res_new_height;     
-        std::cout << std::endl<< "The value of the gamma correction is: " << gamma_val << std::endl;
+        std::cout << std::endl << "The degree of rotation is: " << angle;
+        std::cout << std::endl << "The new sizes are: " << res_new_width << "x" << res_new_height;
+        std::cout << std::endl << "The value of the gamma correction is: " << gamma_val << std::endl;
 
-// ############################################################################
-// Getting the name of the input file:
+        // ############################################################################
+        // Getting the name of the input file:
 
-        static const std::string input_filename = "C:/Users/haffn/Desktop/MSc-III/GPU-II/Projects/second project/nice.jpg";
+        static const std::string input_filename = "../nice.jpg";
 
-// Loading the image:
+        // Loading the image:
 
         rawcolor* data0 = reinterpret_cast<rawcolor*>(stbi_load(input_filename.c_str(), &width, &height, &chanels, 4 /* we expect 4 components */));
-        if(!data0)
+        if (!data0)
         {
             std::cout << "Error: could not open input file: " << input_filename << "\n";
             return -1;
@@ -100,30 +104,30 @@ int main()
             std::cout << std::endl << "Image opened successfully." << "\n";
         }
 
-        std::vector<color> input(width*height);
+        std::vector<color> input(width * height);
 
-// Transfrming the image according to the channels
+        // Transfrming the image according to the channels
 
-        if(chanels == 4)
+        if (chanels == 4)
         {
-            std::transform(data0, data0+width*height, input.begin(), [](rawcolor c){ return color{c.r/255.0f, c.g/255.0f, c.b/255.0f, c.a/255.0f}; } );
+            std::transform(data0, data0 + width * height, input.begin(), [](rawcolor c) { return color{ c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f }; });
         }
-        else if(chanels == 3)
+        else if (chanels == 3)
         {
-            std::transform(data0, data0+width*height, input.begin(), [](rawcolor c){ return color{c.r/255.0f, c.g/255.0f, c.b/255.0f, 1.0f}; } );
+            std::transform(data0, data0 + width * height, input.begin(), [](rawcolor c) { return color{ c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, 1.0f }; });
         }
         stbi_image_free(data0);
 
-// ############################################################################ 
-// Declaring some variables
+        // ############################################################################ 
+        // Declaring some variables
 
         float pi = 3.1415926535897932f;
-        float angle_rad = pi/180.0f*angle;
+        float angle_rad = pi / 180.0f * angle;
 
-// Calculating the new image sizes and centers:
+        // Calculating the new image sizes and centers:
 
-        int rot_new_height = (int)std::round(std::abs(res_new_height*cos(angle_rad)) + std::abs(res_new_width*sin(angle_rad)));
-        int rot_new_width = (int)std::round(std::abs(res_new_width*cos(angle_rad)) + std::abs(res_new_height*sin(angle_rad)));
+        int rot_new_height = (int)std::round(std::abs(res_new_height * cos(angle_rad)) + std::abs(res_new_width * sin(angle_rad)));
+        int rot_new_width = (int)std::round(std::abs(res_new_width * cos(angle_rad)) + std::abs(res_new_height * sin(angle_rad)));
 
         size_t width_size = width;
         size_t height_size = height;
@@ -133,12 +137,12 @@ int main()
         size_t rot_height_size = rot_new_height;
 
 
-// ############################################################################
-// Crating the texture vector
+        // ############################################################################
+        // Crating the texture vector
 
         std::vector<cl::Image2D> textures(3);
 
-// Creating the formats and declaring the image channel types
+        // Creating the formats and declaring the image channel types
 
         cl::ImageFormat Format1;
         cl::ImageFormat Format2;
@@ -152,10 +156,10 @@ int main()
         Format2.image_channel_order = CL_RGBA;
         Format3.image_channel_order = CL_RGBA;
 
-// Creating the textures with the appropriate data
+        // Creating the textures with the appropriate data
 
-        std::vector<color> output1(res_new_width*res_new_height);
-        std::vector<color> output2(rot_new_width*rot_new_height);
+        std::vector<color> output1(res_new_width * res_new_height);
+        std::vector<color> output2(rot_new_width * rot_new_height);
 
         textures[0] = cl::Image2D(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Format1, width_size, height_size, 0, input.data(), nullptr);
         textures[1] = cl::Image2D(context, CL_MEM_READ_WRITE, Format2, res_width_size, res_height_size, 0, nullptr, nullptr);
@@ -163,12 +167,12 @@ int main()
 
         cl::Sampler sampler = cl::Sampler(context, CL_FALSE, CL_ADDRESS_CLAMP, CL_FILTER_NEAREST);
 
-        std::array<cl::size_type, 3> origin = {0, 0, 0};
-        std::array<cl::size_type, 3> dims1 = {res_width_size, res_height_size, 1};
-        std::array<cl::size_type, 3> dims2 = {rot_width_size, rot_height_size, 1};
+        std::array<cl::size_type, 3> origin = { 0, 0, 0 };
+        std::array<cl::size_type, 3> dims1 = { res_width_size, res_height_size, 1 };
+        std::array<cl::size_type, 3> dims2 = { rot_width_size, rot_height_size, 1 };
 
-// ############################################################################
-// Setting the argument of the resize_gamma kernel
+        // ############################################################################
+        // Setting the argument of the resize_gamma kernel
 
         resize_gamma.setArg(0, textures[0]);
         resize_gamma.setArg(1, textures[1]);
@@ -179,7 +183,7 @@ int main()
         resize_gamma.setArg(6, res_new_height);
         resize_gamma.setArg(7, gamma_val);
 
-// Setting the arguments of the rotation kernel
+        // Setting the arguments of the rotation kernel
 
         rotation.setArg(0, textures[1]);
         rotation.setArg(1, textures[2]);
@@ -190,7 +194,7 @@ int main()
         rotation.setArg(6, rot_new_width);
         rotation.setArg(7, angle_rad);
 
-// Calling the kernels
+        // Calling the kernels
 
         queue.enqueueNDRangeKernel(resize_gamma, cl::NullRange, cl::NDRange(res_width_size, res_height_size));
         cl::finish();
@@ -200,17 +204,17 @@ int main()
         cl::finish();
         queue.enqueueReadImage(textures[2], CL_TRUE, origin, dims2, 0, 0, output2.data(), 0, nullptr);
 
-// ############################################################################
-// Creating the output data and saving the image
+        // ############################################################################
+        // Creating the output data and saving the image
 
-        std::vector<rawcolor> tmp(rot_new_width*rot_new_height*4);
-        std::transform(output2.cbegin(), output2.cend(), tmp.begin(), 
-        [](color c) {return rawcolor{ (unsigned char)(c.r*255.0f),
-                                      (unsigned char)(c.g*255.0f),
-                                      (unsigned char)(c.b*255.0f),
-                                      (unsigned char)(1.0f*255.0f) }; });
+        std::vector<rawcolor> tmp(rot_new_width * rot_new_height * 4);
+        std::transform(output2.cbegin(), output2.cend(), tmp.begin(),
+            [](color c) {return rawcolor{ (unsigned char)(c.r * 255.0f),
+                                          (unsigned char)(c.g * 255.0f),
+                                          (unsigned char)(c.b * 255.0f),
+                                          (unsigned char)(1.0f * 255.0f) }; });
 
-        int res = stbi_write_png("result.png", rot_new_width, rot_new_height, 4, tmp.data(), rot_new_width*4);
+        int res = stbi_write_png("../result.png", rot_new_width, rot_new_height, 4, tmp.data(), rot_new_width * 4);
         if (res == 0)
         {
             std::cout << "Error writing utput to file\n";
@@ -218,13 +222,13 @@ int main()
         else
         {
             std::cout << "Output written to file\n";
-        }        
+        }
 
-// ############################################################################
-// If kernel failed to build
+        // ############################################################################
+        // If kernel failed to build
 
     }
-    catch (cl::BuildError& error) 
+    catch (cl::BuildError& error)
     {
         std::cerr << error.what() << "(" << error.err() << ")" << std::endl;
 
